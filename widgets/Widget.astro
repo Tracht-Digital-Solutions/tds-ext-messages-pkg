@@ -1,0 +1,11 @@
+---
+// "Neue Nachrichten" dashboard widget shell (server component). Renders the card
+// chrome + a hydrated island that fetches /messages/summary. Rendered by the
+// Dashboard host via virtual:frontend-widgets.
+import UnreadMessagesCount from "../islands/WidgetBody.tsx";
+---
+
+<article class="widget widget--messages">
+  <h3>Neue Nachrichten</h3>
+  <UnreadMessagesCount client:load />
+</article>

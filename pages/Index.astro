@@ -1,0 +1,11 @@
+---
+// Messages page, injected into the host build via the manifest's route slot.
+// Renders the customer↔owner conversation thread (read + compose + edit).
+// Company scoping + author role come from the backend UserContext.
+import MessageThread from "../islands/MessageThread.tsx";
+---
+
+<section class="page page--messages">
+  <h1>Nachrichten</h1>
+  <MessageThread client:load />
+</section>

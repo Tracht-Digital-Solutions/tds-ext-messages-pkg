@@ -1,0 +1,167 @@
+import { useEffect, useRef, useState } from "react";
+
+interface Message {
+  id: number;
+  customer_id: number | null;
+  project_id: number | null;
+  author_type: "customer" | "owner";
+  body: string;
+  created_at: string;
+  read_at: string | null;
+  edited_at: string | null;
+}
+
+const api = (path: string, init?: RequestInit) =>
+  fetch(path, { credentials: "include", ...init });
+
+const fmt = (iso: string) => {
+  const d = new Date(iso.replace(" ", "T"));
+  return Number.isNaN(d.getTime())
+    ? iso
+    : d.toLocaleString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+};
+
+/**
+ * Portal message thread (ported from tds-customer-legacy-frontend Messages.tsx).
+ * Alternating quoted blocks: owner messages get a primary-coloured left rule,
+ * customer messages a hairline frame. Compose + inline edit (own/admin) reuse
+ * the same backend rules; a 403 renders the no-access state, a 401 is left to
+ * the host auth gate. Relative fetches with credentials.
+ */
+export default function MessageThread() {
+  const [messages, setMessages] = useState<Message[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [forbidden, setForbidden] = useState(false);
+  const [draft, setDraft] = useState("");
+  const [sending, setSending] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editDraft, setEditDraft] = useState("");
+  const [editSaving, setEditSaving] = useState(false);
+  const endRef = useRef<HTMLDivElement | null>(null);
+
+  const load = () =>
+    api("/messages")
+      .then((r) => {
+        if (r.status === 403) {
+          setForbidden(true);
+          return { messages: [] };
+        }
+        if (!r.ok) throw new Error(String(r.status));
+        return r.json();
+      })
+      .then((d) => setMessages(d.messages ?? []))
+      .catch(() => setError("Nachrichten konnten nicht geladen werden."));
+
+  useEffect(() => {
+    void load();
+  }, []);
+
+  useEffect(() => {
+    endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+  }, [messages]);
+
+  async function send(e: React.FormEvent) {
+    e.preventDefault();
+    const text = draft.trim();
+    if (!text || sending) return;
+    setSending(true);
+    try {
+      const r = await api("/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ body: text }),
+      });
+      if (!r.ok) throw new Error(String(r.status));
+      setDraft("");
+      await load();
+    } catch {
+      setError("Nachricht konnte nicht gesendet werden.");
+    } finally {
+      setSending(false);
+    }
+  }
+
+  async function saveEdit(id: number) {
+    const text = editDraft.trim();
+    if (!text || editSaving) return;
+    setEditSaving(true);
+    try {
+      const r = await api(`/messages/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ body: text }),
+      });
+      if (!r.ok) throw new Error(String(r.status));
+      setEditingId(null);
+      await load();
+    } catch {
+      setError("Änderung konnte nicht gespeichert werden.");
+    } finally {
+      setEditSaving(false);
+    }
+  }
+
+  if (forbidden) {
+    return <p className="muted">Kein Zugriff auf Nachrichten.</p>;
+  }
+  if (error && messages === null) {
+    return <p className="error">{error}</p>;
+  }
+  if (messages === null) {
+    return <p className="muted">Wird geladen …</p>;
+  }
+
+  return (
+    <div className="message-thread">
+      {error && <p className="error">{error}</p>}
+      {messages.length === 0 && <p className="muted">Noch keine Nachrichten.</p>}
+      <ol className="message-list">
+        {messages.map((m) => (
+          <li key={m.id} className={`message message--${m.author_type}`}>
+            <header className="message__meta">
+              <span className="message__author">{m.author_type === "owner" ? "Julian" : "Sie"}</span>
+              <time dateTime={m.created_at}>{fmt(m.created_at)}</time>
+              {m.edited_at && <span className="message__edited">(bearbeitet)</span>}
+            </header>
+            {editingId === m.id ? (
+              <div className="message__edit">
+                <textarea value={editDraft} onChange={(e) => setEditDraft(e.target.value)} rows={3} />
+                <div className="message__edit-actions">
+                  <button type="button" onClick={() => saveEdit(m.id)} disabled={editSaving}>Speichern</button>
+                  <button type="button" onClick={() => setEditingId(null)} disabled={editSaving}>Abbrechen</button>
+                </div>
+              </div>
+            ) : (
+              <div className="message__body">
+                {m.body.split("\n").map((line, i) => (
+                  <p key={i}>{line}</p>
+                ))}
+                <button
+                  type="button"
+                  className="message__edit-trigger"
+                  onClick={() => {
+                    setEditingId(m.id);
+                    setEditDraft(m.body);
+                  }}
+                >
+                  Bearbeiten
+                </button>
+              </div>
+            )}
+          </li>
+        ))}
+      </ol>
+      <div ref={endRef} />
+      <form className="message-compose" onSubmit={send}>
+        <textarea
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          placeholder="Nachricht schreiben …"
+          rows={3}
+          maxLength={10000}
+        />
+        <button type="submit" disabled={sending || draft.trim() === ""}>Senden</button>
+      </form>
+    </div>
+  );
+}
