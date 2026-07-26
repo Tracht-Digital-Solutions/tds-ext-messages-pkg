@@ -116,11 +116,21 @@ export default function MessageThread() {
     <div className="message-thread">
       {error && <p className="error">{error}</p>}
       {messages.length === 0 && <p className="muted">Noch keine Nachrichten.</p>}
-      <ol className="message-list">
+      {/* Shared thread primitive. The side is mapped EXPLICITLY: the old code
+          wrote `message message--${author_type}` and neither `.message` nor any
+          `message--*` rule existed anywhere, so every bubble rendered unstyled.
+          `--own` right-aligns, `--other` left-aligns; the customer is the reader
+          here, matching the author label below ("Sie" vs "Julian"). */}
+      <ol className="tds-thread">
         {messages.map((m) => (
-          <li key={m.id} className={`message message--${m.author_type}`}>
+          <li
+            key={m.id}
+            className={`tds-thread__item ${
+              m.author_type === "owner" ? "tds-thread__item--other" : "tds-thread__item--own"
+            }`}
+          >
             <header className="message__meta">
-              <span className="message__author">{m.author_type === "owner" ? "Julian" : "Sie"}</span>
+              <span className="tds-thread__author">{m.author_type === "owner" ? "Julian" : "Sie"}</span>
               <time dateTime={m.created_at}>{fmt(m.created_at)}</time>
               {m.edited_at && <span className="message__edited">(bearbeitet)</span>}
             </header>
