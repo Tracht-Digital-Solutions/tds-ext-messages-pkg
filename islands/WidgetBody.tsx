@@ -16,5 +16,5 @@ export default function UnreadMessagesCount() {
       alive = false;
     };
   }, []);
-  return <p className="widget__metric">{unread === null ? "…" : unread}</p>;
+  return <p className="tds-widget__metric">{unread === null ? "…" : unread}</p>;
 }

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { Spinner } from "@tracht-digital-solutions/tds-shared/components";
 
 interface Message {
   id: number;
@@ -108,7 +109,7 @@ export default function MessageThread() {
     return <p className="error">{error}</p>;
   }
   if (messages === null) {
-    return <p className="muted">Wird geladen …</p>;
+    return <p role="status"><Spinner /></p>;
   }
 
   return (
