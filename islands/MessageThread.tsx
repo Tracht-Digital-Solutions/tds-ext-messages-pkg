@@ -103,10 +103,10 @@ export default function MessageThread() {
   }
 
   if (forbidden) {
-    return <p className="muted">Kein Zugriff auf Nachrichten.</p>;
+    return <p className="marginalia">Kein Zugriff auf Nachrichten.</p>;
   }
   if (error && messages === null) {
-    return <p className="error">{error}</p>;
+    return <p className="tds-alert tds-alert--danger" role="alert">{error}</p>;
   }
   if (messages === null) {
     return <p role="status"><Spinner /></p>;
@@ -114,8 +114,8 @@ export default function MessageThread() {
 
   return (
     <div className="message-thread">
-      {error && <p className="error">{error}</p>}
-      {messages.length === 0 && <p className="muted">Noch keine Nachrichten.</p>}
+      {error && <p className="tds-alert tds-alert--danger" role="alert">{error}</p>}
+      {messages.length === 0 && <p className="marginalia">Noch keine Nachrichten.</p>}
       {/* Shared thread primitive. The side is mapped EXPLICITLY: the old code
           wrote `message message--${author_type}` and neither `.message` nor any
           `message--*` rule existed anywhere, so every bubble rendered unstyled.
@@ -129,21 +129,21 @@ export default function MessageThread() {
               m.author_type === "owner" ? "tds-thread__item--other" : "tds-thread__item--own"
             }`}
           >
-            <header className="message__meta">
+            <header className="tds-row marginalia">
               <span className="tds-thread__author">{m.author_type === "owner" ? "Julian" : "Sie"}</span>
               <time dateTime={m.created_at}>{fmt(m.created_at)}</time>
-              {m.edited_at && <span className="message__edited">(bearbeitet)</span>}
+              {m.edited_at && <span className="marginalia">(bearbeitet)</span>}
             </header>
             {editingId === m.id ? (
-              <div className="message__edit">
+              <div className="tds-compose">
                 <textarea value={editDraft} onChange={(e) => setEditDraft(e.target.value)} rows={3} />
-                <div className="message__edit-actions">
+                <div className="tds-compose__actions">
                   <button type="button" onClick={() => saveEdit(m.id)} disabled={editSaving}>Speichern</button>
                   <button type="button" onClick={() => setEditingId(null)} disabled={editSaving}>Abbrechen</button>
                 </div>
               </div>
             ) : (
-              <div className="message__body">
+              <div className="tds-stack">
                 {m.body.split("\n").map((line, i) => (
                   <p key={i}>{line}</p>
                 ))}
