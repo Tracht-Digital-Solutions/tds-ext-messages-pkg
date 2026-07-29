@@ -29,3 +29,34 @@ full port — this extension follows the same shape.
   from GitHub Packages — never a `path` repo.
 - **Extension routes are Layout-wrapped by the host** (`panelHost({ layout })`); the
   page renders only its `<section>`, never a full `<html>`.
+
+## Tests (frontend)
+
+```bash
+npm run test:run    # vitest, 80 tests (jsdom per-file via a @vitest-environment docblock)
+```
+
+- `islands/MessageThread.test.tsx` — the load-bearing assertion is
+  **attribution**: every message is labelled "Julian" (owner) or "Sie"
+  (customer) and carries an `author_type` class. Checking only that both labels
+  EXIST passes when they are swapped — which would show a customer their own
+  words as if the owner had written them — so each label is matched against its
+  own message.
+  A **403 is its own state** (no access); a **401 is deliberately NOT
+  special-cased** and falls through to the generic error, because the host's
+  pre-paint auth gate owns the logged-out case. Telling an expired user they
+  "have no access" would point them at a permission they actually hold.
+  The body renders as text, never HTML (asserted with an `<img onerror>`), and
+  line breaks survive as separate paragraphs.
+  Both the compose box and the edit box refuse an empty/whitespace body and
+  keep their content when the request fails — a typed message is not
+  recoverable once dropped.
+- `islands/WidgetBody.test.tsx` — the unread tile. The `Number()` coercion is
+  asserted with a zero-padded `"05"`, since `"5"` renders identically either way.
+- `src/index.test.ts` + `tests/packaging.test.ts` — the manifest as a product
+  build sees it, and that every specifier resolves, is exported, and ships.
+
+Error-path tests deliberately answer with a POPULATED body and a non-OK status.
+Against an EMPTY error body the ok-check is unobservable.
+
+Verified by mutation: 41 deliberate breakages introduced, 41 caught.
