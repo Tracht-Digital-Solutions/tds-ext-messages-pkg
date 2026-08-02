@@ -109,7 +109,7 @@ export default function MessageThread() {
     return <p className="tds-alert tds-alert--danger" role="alert">{error}</p>;
   }
   if (messages === null) {
-    return <p role="status"><Spinner /></p>;
+    return <p><Spinner /></p>;
   }
 
   return (

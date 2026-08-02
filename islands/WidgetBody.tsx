@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Skeleton } from "@tracht-digital-solutions/tds-shared/components";
 
 /**
  * "Neue Nachrichten" widget body. Fetches the unread count from the manifest's
@@ -16,5 +17,7 @@ export default function UnreadMessagesCount() {
       alive = false;
     };
   }, []);
-  return <p className="tds-widget__metric">{unread === null ? "…" : unread}</p>;
+  return <p className="tds-widget__metric" aria-busy={unread === null}>
+      {unread === null ? <Skeleton width="3ch" height="1.75rem" /> : unread}
+    </p>;
 }

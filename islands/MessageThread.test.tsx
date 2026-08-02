@@ -95,7 +95,7 @@ describe("loading", () => {
 
   it("shows a loading line until the thread arrives", () => {
     render(<MessageThread />);
-    expect(screen.getByText("Wird geladen …")).toBeTruthy();
+    expect(screen.getByLabelText("Wird geladen")).toBeTruthy();
   });
 
   it("says so when the thread is empty", async () => {
