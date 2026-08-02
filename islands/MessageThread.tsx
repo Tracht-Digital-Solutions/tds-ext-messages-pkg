@@ -136,10 +136,32 @@ export default function MessageThread() {
             </header>
             {editingId === m.id ? (
               <div className="tds-compose">
-                <textarea value={editDraft} onChange={(e) => setEditDraft(e.target.value)} rows={3} />
+                <textarea
+                  className="field-boxed"
+                  value={editDraft}
+                  onChange={(e) => setEditDraft(e.target.value)}
+                  rows={3}
+                  aria-label="Nachricht bearbeiten"
+                />
                 <div className="tds-compose__actions">
-                  <button type="button" onClick={() => saveEdit(m.id)} disabled={editSaving}>Speichern</button>
-                  <button type="button" onClick={() => setEditingId(null)} disabled={editSaving}>Abbrechen</button>
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={() => saveEdit(m.id)}
+                    disabled={editSaving}
+                    aria-busy={editSaving}
+                  >
+                    {editSaving ? <Spinner size="sm" /> : null}
+                    Speichern
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-ghost"
+                    onClick={() => setEditingId(null)}
+                    disabled={editSaving}
+                  >
+                    Abbrechen
+                  </button>
                 </div>
               </div>
             ) : (
@@ -149,7 +171,7 @@ export default function MessageThread() {
                 ))}
                 <button
                   type="button"
-                  className="message__edit-trigger"
+                  className="btn btn-ghost"
                   onClick={() => {
                     setEditingId(m.id);
                     setEditDraft(m.body);
@@ -163,15 +185,24 @@ export default function MessageThread() {
         ))}
       </ol>
       <div ref={endRef} />
-      <form className="message-compose" onSubmit={send}>
+      <form className="tds-compose" onSubmit={send}>
         <textarea
+          className="field-boxed"
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           placeholder="Nachricht schreiben …"
           rows={3}
           maxLength={10000}
         />
-        <button type="submit" disabled={sending || draft.trim() === ""}>Senden</button>
+        <button
+          type="submit"
+          className="btn btn-primary"
+          disabled={sending || draft.trim() === ""}
+          aria-busy={sending}
+        >
+          {sending ? <Spinner size="sm" /> : null}
+          Senden
+        </button>
       </form>
     </div>
   );
