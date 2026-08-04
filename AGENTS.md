@@ -20,6 +20,12 @@ full port — this extension follows the same shape.
 
 ## Gotchas
 
+- **Send/edit failures are toasts (tds-shared `>=0.16.0`).** They used to write
+  the same `error` state the LOAD failure uses, so a failed send replaced the
+  thread-level banner and a successful one said nothing at all. `error` is the
+  load failure only now. Never mount a `ToastHost` here — the frontend host
+  owns the only one.
+
 - **No customer/project FK** — those entities live in another domain (auth /
   customer management), so `customer_id`/`project_id` are loose unsigned refs;
   `customer_id` = the JWT active company id (nullable = admin all-company view).

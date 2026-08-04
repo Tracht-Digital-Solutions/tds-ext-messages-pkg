@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Spinner } from "@tracht-digital-solutions/tds-shared/components";
+import { Spinner, toast } from "@tracht-digital-solutions/tds-shared/components";
 
 interface Message {
   id: number;
@@ -76,7 +76,7 @@ export default function MessageThread() {
       setDraft("");
       await load();
     } catch {
-      setError("Nachricht konnte nicht gesendet werden.");
+      toast.danger("Nachricht konnte nicht gesendet werden.");
     } finally {
       setSending(false);
     }
@@ -96,7 +96,7 @@ export default function MessageThread() {
       setEditingId(null);
       await load();
     } catch {
-      setError("Änderung konnte nicht gespeichert werden.");
+      toast.danger("Änderung konnte nicht gespeichert werden.");
     } finally {
       setEditSaving(false);
     }
