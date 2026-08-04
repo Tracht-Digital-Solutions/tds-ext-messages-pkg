@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import MessageThread from "./MessageThread";
+import { TOAST_EVENT } from "@tracht-digital-solutions/tds-shared/toast";
 
 /**
  * The portal message thread between a customer and the owner.
@@ -52,7 +53,15 @@ const FROM_OWNER = {
   created_at: "2026-07-20 10:30:00",
 };
 
+/** Outcomes are toasts now — collected off the `tds:toast` bus. */
+let toasts: Array<{ variant: string; message: string }> = [];
+const collectToast = (e: Event) => {
+  toasts.push((e as CustomEvent<{ variant: string; message: string }>).detail);
+};
+
 beforeEach(() => {
+  toasts = [];
+  window.addEventListener(TOAST_EVENT, collectToast);
   calls = [];
   // jsdom has no scrollIntoView; the thread calls it on every render.
   (Element.prototype as unknown as { scrollIntoView: () => void }).scrollIntoView = vi.fn();
@@ -69,7 +78,10 @@ beforeEach(() => {
   );
 });
 
-afterEach(() => cleanup());
+afterEach(() => {
+  window.removeEventListener(TOAST_EVENT, collectToast);
+  cleanup();
+});
 
 const user = () => userEvent.setup({ delay: null });
 const sent = (method: string, match: RegExp) => calls.filter((c) => c.method === method && match.test(c.url));
@@ -172,8 +184,12 @@ describe("attribution", () => {
   it("marks each message with its author_type class", async () => {
     await open([FROM_CUSTOMER, FROM_OWNER]);
     await screen.findByText("Wann geht die Seite live?");
-    expect(item("Wann geht die Seite live?").className).toContain("message--customer");
-    expect(item("Nächste Woche Dienstag.").className).toContain("message--owner");
+    // The sides come from the shared thread primitive now — this is the
+    // CUSTOMER's view, so the customer is `--own` and the owner `--other`. The
+    // old `message--customer`/`--owner` classes matched no rule at all, which
+    // is why they were replaced; this assertion had gone stale with them.
+    expect(item("Wann geht die Seite live?").className).toContain("tds-thread__item--own");
+    expect(item("Nächste Woche Dienstag.").className).toContain("tds-thread__item--other");
   });
 
   it("renders the timestamp in German date-and-time form", async () => {
@@ -258,7 +274,7 @@ describe("sending a message", () => {
     const u = await open();
     await u.type(composeBox(), "Kurze Rückfrage.");
     await u.click(screen.getByRole("button", { name: "Senden" }));
-    expect(await screen.findByText("Nachricht konnte nicht gesendet werden.")).toBeTruthy();
+    await waitFor(() => expect(toasts.some((t) => t.variant === "danger" && t.message.includes("Nachricht konnte nicht gesendet werden"))).toBe(true));
     expect((composeBox() as HTMLTextAreaElement).value).toBe("Kurze Rückfrage.");
   });
 
@@ -267,7 +283,7 @@ describe("sending a message", () => {
     const u = await open();
     await u.type(composeBox(), "Kurze Rückfrage.");
     await u.click(screen.getByRole("button", { name: "Senden" }));
-    await screen.findByText("Nachricht konnte nicht gesendet werden.");
+    await waitFor(() => expect(toasts.some((t) => t.variant === "danger" && t.message.includes("Nachricht konnte nicht gesendet werden"))).toBe(true));
     expect(sent("GET", /^\/messages$/)).toHaveLength(1);
   });
 
@@ -355,7 +371,7 @@ describe("editing a message", () => {
     const u = await open([FROM_OWNER]);
     await startEdit(u);
     await u.click(screen.getByRole("button", { name: "Speichern" }));
-    expect(await screen.findByText("Änderung konnte nicht gespeichert werden.")).toBeTruthy();
+    await waitFor(() => expect(toasts.some((t) => t.variant === "danger" && t.message.includes("Änderung konnte nicht gespeichert werden"))).toBe(true));
     expect(screen.getByRole("button", { name: "Speichern" })).toBeTruthy();
     expect(sent("GET", /^\/messages$/)).toHaveLength(1);
   });
