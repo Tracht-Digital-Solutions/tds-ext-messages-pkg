@@ -61,7 +61,7 @@ export default function MessageThread() {
     endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [messages]);
 
-  async function send(e: React.FormEvent) {
+  async function send(e: React.SubmitEvent) {
     e.preventDefault();
     const text = draft.trim();
     if (!text || sending) return;
