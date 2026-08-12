@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Spinner, toast } from "@tracht-digital-solutions/tds-shared/components";
+import { apiFetch } from "@tracht-digital-solutions/tds-shared/api";
 
 interface Message {
   id: number;
@@ -12,8 +13,7 @@ interface Message {
   edited_at: string | null;
 }
 
-const api = (path: string, init?: RequestInit) =>
-  fetch(path, { credentials: "include", ...init });
+const api = apiFetch;
 
 const fmt = (iso: string) => {
   const d = new Date(iso.replace(" ", "T"));
