@@ -83,3 +83,20 @@ Error-path tests deliberately answer with a POPULATED body and a non-OK status.
 Against an EMPTY error body the ok-check is unobservable.
 
 Verified by mutation: 41 deliberate breakages introduced, 41 caught.
+
+## API-Referenz (`php/docs/api.php`)
+
+This module implements the contract's optional `ApiDocSource`: `php/docs/api.php`
+returns one entry per route (summary, params, responses, required permission),
+and the admin frontend's API reference joins it onto the introspected Slim routes
+by `"<METHOD> <pattern>"`. Two things to know before editing a route:
+
+- **`pattern` must be the Slim pattern verbatim**, inline regex included
+  (`/messages/{id:[0-9]+}`). A prettified path silently produces an orphan doc *and* an
+  undocumented route rather than an error.
+- **`php/tests/MessagesApiDocsTest.php` asserts both directions** — the documented
+  set and the registered set must be the same set, every path placeholder must
+  be described, and a named permission must exist in `permissions()`. Adding or
+  renaming a route without touching `docs/api.php` fails there. That is the
+  point: prose next to code rots, and a reference full of confident, wrong
+  detail is worse than the bare route list it replaced.
