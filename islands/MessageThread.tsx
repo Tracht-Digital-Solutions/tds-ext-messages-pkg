@@ -186,8 +186,13 @@ export default function MessageThread() {
       </ol>
       <div ref={endRef} />
       <form className="tds-compose" onSubmit={send}>
+        {/* A placeholder is not a name: it disappears on the first keystroke
+            and many screen readers skip it, so the field had no accessible
+            name at all. The visible context (the thread above) makes a
+            visible label redundant; the name is spoken instead. */}
         <textarea
           className="field-boxed"
+          aria-label="Nachricht"
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           placeholder="Nachricht schreiben …"
