@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Spinner, toast } from "@tracht-digital-solutions/tds-shared/components";
 import { apiFetch } from "@tracht-digital-solutions/tds-shared/api";
+import { AnimatedItem, AnimatedList } from "@tracht-digital-solutions/tds-shared/motion/react";
 
 interface Message {
   id: number;
@@ -121,9 +122,9 @@ export default function MessageThread() {
           `message--*` rule existed anywhere, so every bubble rendered unstyled.
           `--own` right-aligns, `--other` left-aligns; the customer is the reader
           here, matching the author label below ("Sie" vs "Julian"). */}
-      <ol className="tds-thread">
+      <AnimatedList as="ol" className="tds-thread">
         {messages.map((m) => (
-          <li
+          <AnimatedItem
             key={m.id}
             className={`tds-thread__item ${
               m.author_type === "owner" ? "tds-thread__item--other" : "tds-thread__item--own"
@@ -181,9 +182,9 @@ export default function MessageThread() {
                 </button>
               </div>
             )}
-          </li>
+          </AnimatedItem>
         ))}
-      </ol>
+      </AnimatedList>
       <div ref={endRef} />
       <form className="tds-compose" onSubmit={send}>
         {/* A placeholder is not a name: it disappears on the first keystroke

@@ -20,6 +20,10 @@ full port — this extension follows the same shape.
 
 ## Gotchas
 
+- **Motion kommt aus `tds-shared/motion/react` (peer `>=0.38.7`).** Der Verlauf
+  ist eine `AnimatedList`: eine gesendete oder eingetroffene Nachricht gleitet
+  in den Thread, statt einfach da zu sein.
+
 - **Call the API with `apiFetch` from `@tracht-digital-solutions/tds-shared/api`,
   never a relative `fetch`.** Every island used to define its own
   `const api = (path, init) => fetch(path, { credentials: "include", ...init })`
