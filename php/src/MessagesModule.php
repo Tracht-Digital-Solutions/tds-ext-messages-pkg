@@ -12,6 +12,7 @@ use Tds\Frontend\Contract\AbstractModule;
 use Tds\Frontend\Contract\ApiDocSource;
 use Tds\Frontend\Contract\PermissionDef;
 use Tds\Frontend\Contract\UserContext;
+use Tds\Frontend\Contract\ModuleHttp;
 
 /**
  * Backend Module for the customer↔owner message thread, ported from
@@ -24,6 +25,8 @@ use Tds\Frontend\Contract\UserContext;
  */
 final class MessagesModule extends AbstractModule implements ApiDocSource
 {
+    use ModuleHttp;
+
     public function id(): string
     {
         return 'messages';
@@ -152,23 +155,6 @@ final class MessagesModule extends AbstractModule implements ApiDocSource
     private static function intParam(mixed $v): ?int
     {
         return $v !== null && ctype_digit((string) $v) ? (int) $v : null;
-    }
-
-    private static function require(UserContext $user, string $permission, Response $res): ?Response
-    {
-        if (!$user->isAuthenticated()) {
-            return self::json($res, ['error' => 'Unauthorized'], 401);
-        }
-        if (!$user->has($permission)) {
-            return self::json($res, ['error' => 'Forbidden'], 403);
-        }
-        return null;
-    }
-
-    private static function json(Response $res, mixed $data, int $status = 200): Response
-    {
-        $res->getBody()->write(json_encode($data, JSON_THROW_ON_ERROR));
-        return $res->withStatus($status)->withHeader('Content-Type', 'application/json');
     }
 
     /**
