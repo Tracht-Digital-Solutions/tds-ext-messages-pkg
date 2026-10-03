@@ -57,6 +57,9 @@ final class MessagesModule extends AbstractModule implements ApiDocSource
             if (($deny = self::require($user, 'messages:read', $res)) !== null) {
                 return $deny;
             }
+            if (self::lacksCompany($user)) {
+                return self::json($res, ['unread' => 0]);
+            }
             $repo = $c->get(MessageRepository::class);
             $cid = self::scopeCompanyId($user);
             return self::json($res, ['unread' => $repo->unreadCount($cid, $user->isAdmin())]);
@@ -68,11 +71,19 @@ final class MessagesModule extends AbstractModule implements ApiDocSource
             if (($deny = self::require($user, 'messages:read', $res)) !== null) {
                 return $deny;
             }
+            if (self::lacksCompany($user)) {
+                return self::json($res, ['error' => 'No active company'], 422);
+            }
             $repo = $c->get(MessageRepository::class);
             $cid = self::scopeCompanyId($user);
             $pid = self::intParam($req->getQueryParams()['projectId'] ?? null);
             $rows = $repo->listForCustomer($cid, $pid);
-            $repo->markRead($cid, $user->isAdmin());
+            // Read receipts only for an unfiltered view: a project filter
+            // shows part of the thread, so marking the whole company read
+            // hid unseen messages from other projects.
+            if ($pid === null) {
+                $repo->markRead($cid, $user->isAdmin());
+            }
             return self::json($res, ['messages' => $rows]);
         });
 
@@ -116,6 +127,17 @@ final class MessagesModule extends AbstractModule implements ApiDocSource
             $ok = $repo->update((int) $args['id'], $text, $cid, $user->isAdmin());
             return $ok ? self::json($res, ['id' => (int) $args['id']]) : self::json($res, ['error' => 'Not found'], 404);
         });
+    }
+
+    /**
+     * A non-admin without an active company has no scope at all. The scope
+     * helper below answers null for them too — and null means "every company"
+     * to the repository, so such a login read every tenant's thread, counted
+     * every tenant's unread messages and marked them all read.
+     */
+    private static function lacksCompany(UserContext $user): bool
+    {
+        return !$user->isAdmin() && $user->activeCompanyId() === null;
     }
 
     /** Active company scope: admin w/o active company → null (all); else the company id. */

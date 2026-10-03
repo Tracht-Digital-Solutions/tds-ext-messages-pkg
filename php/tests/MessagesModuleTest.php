@@ -141,6 +141,18 @@ final class MessagesModuleTest extends TestCase
         self::assertSame(422, $res->getStatusCode());
     }
 
+    public function testCustomerWithoutCompanyCannotReadEveryTenantsThread(): void
+    {
+        // No active company meant scope null — which the repository reads as
+        // "all companies". Refused before any query (no PDO is bound here).
+        $app = $this->appWith(new FakeUser(perms: ['messages:read'], company: null));
+
+        self::assertSame(422, $this->get($app, '/messages')->getStatusCode());
+        $summary = $this->get($app, '/messages/summary');
+        self::assertSame(200, $summary->getStatusCode());
+        self::assertSame(['unread' => 0], json_decode((string) $summary->getBody(), true));
+    }
+
     public function testPatchRequiresBody(): void
     {
         $res = $this->send($this->appWith(new FakeUser(admin: true)), 'PATCH', '/messages/5', []);
