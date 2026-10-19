@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import { Spinner, toast } from "@tracht-digital-solutions/tds-shared/components";
-import { apiFetch } from "@tracht-digital-solutions/tds-shared/api";
+import { Alert, Spinner, toast } from "@tracht-digital-solutions/tds-shared/components";
+import { apiFetch, sendJson } from "@tracht-digital-solutions/tds-shared/api";
+import { formatDateTime } from "@tracht-digital-solutions/tds-shared/format";
 import { AnimatedItem, AnimatedList } from "@tracht-digital-solutions/tds-shared/motion/react";
 
 interface Message {
@@ -13,15 +14,6 @@ interface Message {
   read_at: string | null;
   edited_at: string | null;
 }
-
-const api = apiFetch;
-
-const fmt = (iso: string) => {
-  const d = new Date(iso.replace(" ", "T"));
-  return Number.isNaN(d.getTime())
-    ? iso
-    : d.toLocaleString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
-};
 
 /**
  * Portal message thread (ported from tds-customer-legacy-frontend Messages.tsx).
@@ -42,7 +34,7 @@ export default function MessageThread() {
   const endRef = useRef<HTMLDivElement | null>(null);
 
   const load = () =>
-    api("/messages")
+    apiFetch("/messages")
       .then((r) => {
         if (r.status === 403) {
           setForbidden(true);
@@ -68,11 +60,7 @@ export default function MessageThread() {
     if (!text || sending) return;
     setSending(true);
     try {
-      const r = await api("/messages", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ body: text }),
-      });
+      const r = await sendJson("/messages", "POST", { body: text });
       if (!r.ok) throw new Error(String(r.status));
       setDraft("");
       await load();
@@ -88,11 +76,7 @@ export default function MessageThread() {
     if (!text || editSaving) return;
     setEditSaving(true);
     try {
-      const r = await api(`/messages/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ body: text }),
-      });
+      const r = await sendJson(`/messages/${id}`, "PATCH", { body: text });
       if (!r.ok) throw new Error(String(r.status));
       setEditingId(null);
       await load();
@@ -107,7 +91,7 @@ export default function MessageThread() {
     return <p className="marginalia">Kein Zugriff auf Nachrichten.</p>;
   }
   if (error && messages === null) {
-    return <p className="tds-alert tds-alert--danger" role="alert">{error}</p>;
+    return <Alert>{error}</Alert>;
   }
   if (messages === null) {
     return <p><Spinner /></p>;
@@ -115,7 +99,7 @@ export default function MessageThread() {
 
   return (
     <div className="message-thread">
-      {error && <p className="tds-alert tds-alert--danger" role="alert">{error}</p>}
+      <Alert>{error}</Alert>
       {messages.length === 0 && <p className="marginalia">Noch keine Nachrichten.</p>}
       {/* Shared thread primitive. The side is mapped EXPLICITLY: the old code
           wrote `message message--${author_type}` and neither `.message` nor any
@@ -132,7 +116,7 @@ export default function MessageThread() {
           >
             <header className="tds-row marginalia">
               <span className="tds-thread__author">{m.author_type === "owner" ? "Julian" : "Sie"}</span>
-              <time dateTime={m.created_at}>{fmt(m.created_at)}</time>
+              <time dateTime={m.created_at}>{formatDateTime(m.created_at, { fallback: m.created_at })}</time>
               {m.edited_at && <span className="marginalia">(bearbeitet)</span>}
             </header>
             {editingId === m.id ? (
